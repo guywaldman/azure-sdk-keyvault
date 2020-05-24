@@ -6,6 +6,23 @@ use chrono::{DateTime, Utc};
 use getset::Getters;
 use reqwest::Url;
 use serde::Deserialize;
+
+#[derive(Debug)]
+pub struct KeyVaultSecretBaseIdentifier {
+    id: String,
+    name: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct KeyVaultSecretBaseIdentifierRaw {
+    id: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct KeyVaultGetSecretsResponse {
+    value: Vec<KeyVaultSecretBaseIdentifierRaw>,
+}
+
 #[derive(Debug, Getters)]
 #[getset(get = "pub")]
 pub struct KeyVaultSecret {
@@ -64,5 +81,31 @@ impl<'a> KeyVaultClient<'a> {
             time_updated: response.attributes.updated,
             id: response.id,
         })
+    }
+
+    pub async fn list_secrets(
+        &'a mut self,
+        max_secrets: usize,
+    ) -> Result<Vec<KeyVaultSecretBaseIdentifier>, KeyVaultError> {
+        let uri = Url::parse_with_params(
+            &format!("https://{}.vault.azure.net/secrets", self.keyvault_name),
+            &[
+                ("api-version", "7.0"),
+                ("maxresults", &max_secrets.to_string()),
+            ],
+        )
+        .unwrap();
+
+        let resp_body = self.get_authed(uri.to_string()).await?;
+        let response = serde_json::from_str::<KeyVaultGetSecretsResponse>(&resp_body).unwrap();
+
+        Ok(response
+            .value
+            .into_iter()
+            .map(|s| KeyVaultSecretBaseIdentifier {
+                id: s.id.to_owned(),
+                name: s.id.to_owned().split("/").last().unwrap().to_owned(),
+            })
+            .collect())
     }
 }
