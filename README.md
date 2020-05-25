@@ -12,7 +12,13 @@
 [Azure Key Vault](https://azure.microsoft.com/en-us/services/key-vault/) is a service in Microsoft Azure for securely storing and accessing secrets, credentials and certificates in the cloud.
 This crate exposes Rust bindings for the Azure Key Vault [REST API](https://docs.microsoft.com/en-us/rest/api/keyvault/).
 
-> This project is a standalone contribution to [MindFlavor/AzureSDKForRust](https://github.com/MindFlavor/AzureSDKForRust) and is also a learning project for Rust 🦀
+This was started as a standalone contribution to [MindFlavor/AzureSDKForRust](https://github.com/MindFlavor/AzureSDKForRust),
+which has many other useful Azure REST API bindings for Rust.
+
+## Important Disclaimer
+
+I am a Microsoft employee, but this is not an official Microsoft product nor an endorsed product.
+Purely a project for fun and for learning Rust.
 
 ## Example Usage
 
@@ -39,6 +45,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ...are welcome! Currently the repo exposes a very small number of operations.
 
-## Related Projects
+## Related Work
 
 This project was started from the fantastic [MindFlavor/AzureSDKForRust](https://github.com/MindFlavor/AzureSDKForRust) repo.
