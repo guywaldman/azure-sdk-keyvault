@@ -26,7 +26,6 @@ Purely a project for fun and for learning Rust.
 
 ```rust
 use azure_sdk_keyvault::KeyVaultClient;
-use std::env;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {

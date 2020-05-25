@@ -9,9 +9,9 @@ use std::sync::Arc;
 const PUBLIC_ENDPOINT_SUFFIX: &str = "vault.azure.net";
 
 /// Client for Key Vault operations - getting a secret, listing secrets, etc.
-/// 
+///
 /// # Examples
-/// 
+///
 /// ```
 /// use azure_sdk_keyvault::KeyVaultClient;
 /// let client = KeyVaultClient::new(&"{client_id}", &"{client_secret}", &"{tenant_id}", &"test-keyvault");
@@ -30,9 +30,9 @@ pub struct KeyVaultClient<'a> {
 impl<'a> KeyVaultClient<'a> {
     /// Creates a new `KeyVaultClient` with an endpoint suffix. Useful for non-public Azure clouds.
     /// For the default public environment, use `KeyVaultClient::new`.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use azure_sdk_keyvault::KeyVaultClient;
     /// let client = KeyVaultClient::new_with_endpoint_suffix(&"c1a6d79b-082b-4798-b362-a77e96de50db", &"SUPER_SECRET_KEY", &"bc598e67-03d8-44d5-aa46-8289b9a39a14", &"test-keyvault", &"vault.foobar.net");
@@ -56,9 +56,9 @@ impl<'a> KeyVaultClient<'a> {
     }
 
     /// Creates a new `KeyVaultClient`.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// ```
     /// use azure_sdk_keyvault::KeyVaultClient;
     /// let client = KeyVaultClient::new(&"c1a6d79b-082b-4798-b362-a77e96de50db", &"SUPER_SECRET_KEY", &"bc598e67-03d8-44d5-aa46-8289b9a39a14", &"test-keyvault");
@@ -131,6 +131,35 @@ impl<'a> KeyVaultClient<'a> {
             .await
             .unwrap();
         let body = resp.text().await.unwrap();
+        Ok(body)
+    }
+
+    pub(crate) async fn patch_authed(&mut self, uri: String, body: String) -> Result<String, KeyVaultError> {
+        self.refresh_token().await?;
+
+        let resp = reqwest::Client::new()
+            .patch(&uri)
+            .header(
+                "Authorization",
+                format!("Bearer {}", self.token.as_ref().unwrap().secret()),
+            )
+            .header("Content-Type", "application/json")
+            .body(body)
+            .send()
+            .await
+            .unwrap();
+
+        let body = resp.text().await.unwrap();
+
+        let body_serialized = serde_json::from_str::<serde_json::Value>(&body).unwrap();
+        if let Some(err) = body_serialized.get("error") {
+            return Err(KeyVaultError::GeneralError(
+                err.get("message")
+                    .expect("Received an error accessing the Key Vault, which could not be parsed as expected.")
+                    .to_string(),
+            ));
+        }
+
         Ok(body)
     }
 }
