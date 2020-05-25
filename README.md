@@ -2,6 +2,8 @@
 
 ![Crates.io](https://img.shields.io/crates/v/azure-sdk-rust)
 ![Crates.io](https://img.shields.io/crates/l/azure-sdk-rust)
+![Stability: Unstable](https://img.shields.io/badge/stability-unstable-red)
+![Travis CI](https://img.shields.io/travis/guywaldman/azure-sdk-keyvault)
 
 
 
