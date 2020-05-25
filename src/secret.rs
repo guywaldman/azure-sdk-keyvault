@@ -7,6 +7,8 @@ use getset::Getters;
 use reqwest::Url;
 use serde::Deserialize;
 
+const API_VERSION: &str = "7.0";
+
 #[derive(Debug)]
 pub struct KeyVaultSecretBaseIdentifier {
     id: String,
@@ -69,7 +71,7 @@ impl<'a> KeyVaultClient<'a> {
                 "https://{}.vault.azure.net/secrets/{}/{}",
                 self.keyvault_name, secret_name, secret_version_name
             ),
-            &[("api-version", "7.0")],
+            &[("api-version", API_VERSION)],
         )
         .unwrap();
         let resp_body = self.get_authed(uri.to_string()).await?;
@@ -90,7 +92,7 @@ impl<'a> KeyVaultClient<'a> {
         let uri = Url::parse_with_params(
             &format!("https://{}.vault.azure.net/secrets", self.keyvault_name),
             &[
-                ("api-version", "7.0"),
+                ("api-version", API_VERSION),
                 ("maxresults", &max_secrets.to_string()),
             ],
         )
