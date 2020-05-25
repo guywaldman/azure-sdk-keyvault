@@ -39,12 +39,12 @@ pub struct KeyVaultSecretBaseIdentifier {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct KeyVaultSecretBaseIdentifierRaw {
+pub(crate) struct KeyVaultSecretBaseIdentifierRaw {
     id: String,
 }
 
 #[derive(Deserialize, Debug)]
-pub struct KeyVaultGetSecretsResponse {
+pub(crate) struct KeyVaultGetSecretsResponse {
     value: Vec<KeyVaultSecretBaseIdentifierRaw>,
 }
 
@@ -157,6 +157,33 @@ impl<'a> KeyVaultClient<'a> {
             .collect())
     }
 
+    pub async fn get_secret_versions(
+        &mut self,
+        secret_name: &'a str,
+        max_secrets: usize,
+    ) -> Result<Vec<KeyVaultSecretBaseIdentifier>, KeyVaultError> {
+        let uri = Url::parse_with_params(
+            &format!(
+                "https://{}.vault.azure.net/secrets/{}/versions",
+                self.keyvault_name, secret_name
+            ),
+            &[("api-version", API_VERSION), ("maxresults", &max_secrets.to_string())],
+        )
+        .unwrap();
+
+        let resp_body = self.get_authed(uri.to_string()).await?;
+        let response = serde_json::from_str::<KeyVaultGetSecretsResponse>(&resp_body).unwrap();
+
+        Ok(response
+            .value
+            .into_iter()
+            .map(|s| KeyVaultSecretBaseIdentifier {
+                id: s.id.to_owned(),
+                name: s.id.to_owned().split("/").last().unwrap().to_owned(),
+            })
+            .collect())
+    }
+
     /// Sets a secret in the Key Vault.
     ///
     /// # Example
@@ -233,7 +260,7 @@ impl<'a> KeyVaultClient<'a> {
     /// # Example
     ///
     /// ```
-    /// use azure_sdk_keyvault::KeyVaultClient;
+    /// use azure_sdk_keyvault::{KeyVaultClient, RecoveryLevel};
     /// let mut client = KeyVaultClient::new(&"...", &"...", &"...", &"test-keyvault");
     /// client.update_secret_recovery_level(&"some_secret", &"...", RecoveryLevel::Purgeable);
     /// ```
