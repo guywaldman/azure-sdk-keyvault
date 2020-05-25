@@ -9,7 +9,7 @@
 
 > 🚧 Work in progress, not encouraged for use in production. 🚧
 
-## what is this?
+## About this Crate
 
 [Azure Key Vault](https://azure.microsoft.com/en-us/services/key-vault/) is a service in Microsoft Azure for securely storing and accessing secrets, credentials and certificates in the cloud.
 This crate exposes Rust bindings for the Azure Key Vault [REST API](https://docs.microsoft.com/en-us/rest/api/keyvault/).
