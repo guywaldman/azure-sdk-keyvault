@@ -8,6 +8,8 @@ Rust bindings for Azure Key Vault [REST API](https://docs.microsoft.com/en-us/re
 
 > 🚧 Work in progress, not encouraged for use in production. 🚧
 
+This project is a standalone contribution to [MindFlavor/AzureSDKForRust](https://github.com/MindFlavor/AzureSDKForRust) and is also a learning project for Rust 🦀
+
 ## Example Usage
 
 ```rust
@@ -35,4 +37,4 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ## Related Projects
 
-This project was started from the fantastic [`AzureSDKForRust`](https://github.com/MindFlavor/AzureSDKForRust) repo.
+This project was started from the fantastic [MindFlavor/AzureSDKForRust](https://github.com/MindFlavor/AzureSDKForRust) repo.
