@@ -1,6 +1,7 @@
 mod client;
 pub mod secret;
 pub use client::KeyVaultClient;
+pub use secret::RecoveryLevel;
 
 use thiserror::Error;
 
@@ -11,4 +12,7 @@ pub enum KeyVaultError {
 
     #[error("Azure Active Directory authorization error")]
     AuthorizationError(#[from] anyhow::Error),
+
+    #[error("General error: {0}")]
+    GeneralError(String),
 }
