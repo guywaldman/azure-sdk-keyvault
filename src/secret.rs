@@ -18,7 +18,7 @@ pub enum RecoveryLevel {
     Purgeable,
     Recoverable,
     RecoverableAndProtectedSubscription,
-    RecoverableAndPurgeable
+    RecoverableAndPurgeable,
 }
 
 impl fmt::Display for RecoveryLevel {
@@ -241,17 +241,25 @@ impl<'a> KeyVaultClient<'a> {
         &mut self,
         secret_name: &'a str,
         secret_version: &'a str,
-        expiration_time: DateTime<Utc>
+        expiration_time: DateTime<Utc>,
     ) -> Result<(), KeyVaultError> {
         let mut attributes = Map::new();
-        attributes.insert("exp".to_owned(), Value::Number(serde_json::Number::from(expiration_time.timestamp())));
+        attributes.insert(
+            "exp".to_owned(),
+            Value::Number(serde_json::Number::from(expiration_time.timestamp())),
+        );
 
         self.update_secret(secret_name, secret_version, attributes).await?;
 
         Ok(())
     }
 
-    async fn update_secret(&mut self, secret_name: &'a str, secret_version: &'a str, attributes: Map<String, Value>) -> Result<(), KeyVaultError> {
+    async fn update_secret(
+        &mut self,
+        secret_name: &'a str,
+        secret_version: &'a str,
+        attributes: Map<String, Value>,
+    ) -> Result<(), KeyVaultError> {
         let uri = Url::parse_with_params(
             &format!(
                 "https://{}.vault.azure.net/secrets/{}/{}",
