@@ -6,6 +6,7 @@ use chrono::{DateTime, Utc};
 use getset::Getters;
 use reqwest::Url;
 use serde::Deserialize;
+use serde_json::{Map, Value};
 
 const API_VERSION: &str = "7.0";
 
@@ -86,7 +87,7 @@ impl<'a> KeyVaultClient<'a> {
     }
 
     pub async fn list_secrets(
-        &'a mut self,
+        &mut self,
         max_secrets: usize,
     ) -> Result<Vec<KeyVaultSecretBaseIdentifier>, KeyVaultError> {
         let uri = Url::parse_with_params(
@@ -109,5 +110,26 @@ impl<'a> KeyVaultClient<'a> {
                 name: s.id.to_owned().split("/").last().unwrap().to_owned(),
             })
             .collect())
+    }
+
+    pub async fn set_secret(
+        &mut self,
+        secret_name: &'a str,
+        new_secret_value: &'a str
+    ) -> Result<(), KeyVaultError> {
+        let uri = Url::parse_with_params(
+            &format!("https://{}.vault.azure.net/secrets/{}", self.keyvault_name, secret_name),
+            &[
+                ("api-version", API_VERSION)
+            ],
+        )
+        .unwrap();
+
+        let mut request_body = Map::new();
+        request_body.insert("value".to_owned(), Value::String(new_secret_value.to_owned()));
+
+        self.put_authed(uri.to_string(), Value::Object(request_body).to_string()).await?;
+
+        Ok(())
     }
 }
