@@ -210,7 +210,7 @@ impl<'a> KeyVaultClient<'a> {
     /// # Example
     ///
     /// ```
-    /// use azure_sdk_keyvault::KeyVaultClient;
+    /// use azure_sdk_keyvault::{KeyVaultClient, RecoveryLevel};
     /// let mut client = KeyVaultClient::new(&"...", &"...", &"...", &"test-keyvault");
     /// client.update_secret_recovery_level(&"some_secret", &"...", RecoveryLevel::Purgeable);
     /// ```
