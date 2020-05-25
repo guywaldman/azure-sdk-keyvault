@@ -100,10 +100,7 @@ impl<'a> KeyVaultClient<'a> {
                 "Authorization",
                 format!("Bearer {}", self.token.as_ref().unwrap().secret()),
             )
-            .header(
-                "Content-Type",
-                "application/json"
-            )
+            .header("Content-Type", "application/json")
             .body(body)
             .send()
             .await

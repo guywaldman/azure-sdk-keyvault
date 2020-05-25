@@ -55,10 +55,7 @@ pub(crate) struct KeyVaultGetSecretResponseAttributes {
 }
 
 impl<'a> KeyVaultClient<'a> {
-    pub async fn get_secret(
-        &mut self,
-        secret_name: &'a str,
-    ) -> Result<KeyVaultSecret, KeyVaultError> {
+    pub async fn get_secret(&mut self, secret_name: &'a str) -> Result<KeyVaultSecret, KeyVaultError> {
         Ok(self.get_secret_with_version(secret_name, "").await?)
     }
 
@@ -92,10 +89,7 @@ impl<'a> KeyVaultClient<'a> {
     ) -> Result<Vec<KeyVaultSecretBaseIdentifier>, KeyVaultError> {
         let uri = Url::parse_with_params(
             &format!("https://{}.vault.azure.net/secrets", self.keyvault_name),
-            &[
-                ("api-version", API_VERSION),
-                ("maxresults", &max_secrets.to_string()),
-            ],
+            &[("api-version", API_VERSION), ("maxresults", &max_secrets.to_string())],
         )
         .unwrap();
 
@@ -112,23 +106,18 @@ impl<'a> KeyVaultClient<'a> {
             .collect())
     }
 
-    pub async fn set_secret(
-        &mut self,
-        secret_name: &'a str,
-        new_secret_value: &'a str
-    ) -> Result<(), KeyVaultError> {
+    pub async fn set_secret(&mut self, secret_name: &'a str, new_secret_value: &'a str) -> Result<(), KeyVaultError> {
         let uri = Url::parse_with_params(
             &format!("https://{}.vault.azure.net/secrets/{}", self.keyvault_name, secret_name),
-            &[
-                ("api-version", API_VERSION)
-            ],
+            &[("api-version", API_VERSION)],
         )
         .unwrap();
 
         let mut request_body = Map::new();
         request_body.insert("value".to_owned(), Value::String(new_secret_value.to_owned()));
 
-        self.put_authed(uri.to_string(), Value::Object(request_body).to_string()).await?;
+        self.put_authed(uri.to_string(), Value::Object(request_body).to_string())
+            .await?;
 
         Ok(())
     }
