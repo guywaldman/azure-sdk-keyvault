@@ -8,6 +8,14 @@ use std::sync::Arc;
 
 const PUBLIC_ENDPOINT_SUFFIX: &str = "vault.azure.net";
 
+/// Client for Key Vault operations - getting a secret, listing secrets, etc.
+/// 
+/// # Examples
+/// 
+/// ```
+/// use azure_sdk_keyvault::KeyVaultClient;
+/// let client = KeyVaultClient::new(&"{client_id}", &"{client_secret}", &"{tenant_id}", &"test-keyvault");
+/// ```
 #[derive(Debug)]
 pub struct KeyVaultClient<'a> {
     pub(crate) aad_client_id: &'a str,
@@ -20,6 +28,15 @@ pub struct KeyVaultClient<'a> {
 }
 
 impl<'a> KeyVaultClient<'a> {
+    /// Creates a new `KeyVaultClient` with an endpoint suffix. Useful for non-public Azure clouds.
+    /// For the default public environment, use `KeyVaultClient::new`.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use azure_sdk_keyvault::KeyVaultClient;
+    /// let client = KeyVaultClient::new_with_endpoint_suffix(&"c1a6d79b-082b-4798-b362-a77e96de50db", &"SUPER_SECRET_KEY", &"bc598e67-03d8-44d5-aa46-8289b9a39a14", &"test-keyvault", &"vault.foobar.net");
+    /// ```
     pub fn new_with_endpoint_suffix(
         aad_client_id: &'a str,
         aad_client_secret: &'a str,
@@ -38,6 +55,14 @@ impl<'a> KeyVaultClient<'a> {
         }
     }
 
+    /// Creates a new `KeyVaultClient`.
+    /// 
+    /// # Examples
+    /// 
+    /// ```
+    /// use azure_sdk_keyvault::KeyVaultClient;
+    /// let client = KeyVaultClient::new(&"c1a6d79b-082b-4798-b362-a77e96de50db", &"SUPER_SECRET_KEY", &"bc598e67-03d8-44d5-aa46-8289b9a39a14", &"test-keyvault");
+    /// ```
     pub fn new(
         aad_client_id: &'a str,
         aad_client_secret: &'a str,
