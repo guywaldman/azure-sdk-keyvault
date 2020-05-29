@@ -296,14 +296,15 @@ impl<'a> KeyVaultClient<'a> {
         Ok(())
     }
 
-    /// Changes a secret's [Recovery Level](RecoveryLevel).
+    /// Changes a secret's expiration time.
     ///
     /// # Example
     ///
     /// ```
     /// use azure_sdk_keyvault::{KeyVaultClient, RecoveryLevel};
+    /// use chrono::{Utc, Duration};
     /// let mut client = KeyVaultClient::new(&"...", &"...", &"...", &"test-keyvault");
-    /// client.update_secret_recovery_level(&"some_secret", &"...", RecoveryLevel::Purgeable);
+    /// client.update_secret_expiration_time(&"some_secret", &"...", Utc::now() + Duration::days(90));
     /// ```
     pub async fn update_secret_expiration_time(
         &mut self,
