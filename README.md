@@ -2,12 +2,9 @@
 
 ![Crates.io](https://img.shields.io/crates/v/azure-sdk-rust)
 ![Crates.io](https://img.shields.io/crates/l/azure-sdk-rust)
-![Stability: Unstable](https://img.shields.io/badge/stability-unstable-red)
 [![Build Status](https://travis-ci.org/guywaldman/azure-sdk-keyvault.svg?branch=master)](https://travis-ci.org/guywaldman/azure-sdk-keyvault)
 
-
-
-> 🚧 Work in progress, not encouraged for use in production. 🚧
+> 🚧 Work in progress, do not use in production. 🚧
 
 ## About this Crate
 
@@ -35,7 +32,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     client.set_secret("test-secret", "42").await?;
 
     // Get a secret.
-    let secret = client.get_secret(&secret_name).await?;
+    let secret = client.get_secret("test-secret").await?;
     assert_eq!("42", secret.value());
 
     Ok(())
