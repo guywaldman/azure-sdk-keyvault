@@ -343,3 +343,143 @@ impl<'a> KeyVaultClient<'a> {
         Ok(())
     }
 }
+
+#[cfg(test)]
+#[allow(unused_must_use)]
+mod tests {
+    use super::*;
+
+    use chrono::{Duration, Utc};
+    use mockito::{mock, Matcher};
+    use oauth2::AccessToken;
+    use serde_json::json;
+
+    fn diff(first: DateTime<Utc>, second: DateTime<Utc>) -> Duration {
+        if first > second {
+            first - second
+        } else {
+            second - first
+        }
+    }
+
+    macro_rules! mock_client {
+        ($keyvault_name:expr) => {{
+            let mut client = KeyVaultClient::with_aad_token(
+                &"",
+                &"",
+                &"TENANT_ID",
+                $keyvault_name,
+                AccessToken::new("TOKEN".to_owned()),
+                Utc::now() + Duration::days(14),
+            );
+            client.keyvault_endpoint = mockito::server_url();
+            client
+        }};
+    }
+
+    #[tokio::test]
+    async fn get_secret() {
+        let time_created = Utc::now() - Duration::days(7);
+        let time_updated = Utc::now();
+        let _m = mock("GET", "/secrets/test-secret/")
+            .match_query(Matcher::UrlEncoded("api-version".into(), API_VERSION.into()))
+            .with_header("content-type", "application/json")
+            .with_body(
+                json!({
+                    "value": "secret-value",
+                    "id": "https://test-keyvault.vault.azure.net/secrets/test-secret/4387e9f3d6e14c459867679a90fd0f79",
+                    "attributes": {
+                        "enabled": true,
+                        "created": time_created.timestamp(),
+                        "updated": time_updated.timestamp(),
+                        "recoveryLevel": "Recoverable+Purgeable"
+                    }
+                })
+                .to_string(),
+            )
+            .with_status(200)
+            .create();
+
+        let mut client = mock_client!(&"test-keyvault");
+
+        let secret: KeyVaultSecret = client.get_secret(&"test-secret").await.unwrap();
+
+        assert_eq!("secret-value", secret.value());
+        assert_eq!(
+            "https://test-keyvault.vault.azure.net/secrets/test-secret/4387e9f3d6e14c459867679a90fd0f79",
+            secret.id()
+        );
+        assert_eq!(true, *secret.enabled());
+        assert!(diff(time_created, *secret.time_created()) < Duration::seconds(1));
+        assert!(diff(time_updated, *secret.time_updated()) < Duration::seconds(1));
+    }
+
+    #[tokio::test]
+    async fn get_secret_versions() {
+        let time_created_1 = Utc::now() - Duration::days(7);
+        let time_updated_1 = Utc::now();
+        let time_created_2 = Utc::now() - Duration::days(9);
+        let time_updated_2 = Utc::now() - Duration::days(2);
+
+        let _m1 = mock("GET", "/secrets/test-secret/versions")
+            .match_query(Matcher::AllOf(vec![
+                Matcher::UrlEncoded("api-version".into(), API_VERSION.into()),
+                Matcher::UrlEncoded("maxresults".into(), DEFAULT_GET_VERISONS_MAX_RESULTS.to_string()),
+            ]))
+            .with_header("content-type", "application/json")
+            .with_body(
+                json!({
+                    "value": [{
+                        "id": "https://test-keyvault.vault.azure.net/secrets/test-secret/VERSION_1",
+                        "attributes": {
+                            "enabled": true,
+                            "created": time_created_1.timestamp(),
+                            "updated": time_updated_1.timestamp(),
+                        }
+                    }],
+                    "nextLink": format!("{}/secrets/text-secret/versions?api-version={}&maxresults=1&$skiptoken=SKIP_TOKEN_MOCK", mockito::server_url().to_string(), API_VERSION)
+                })
+                .to_string(),
+            )
+            .with_status(200)
+            .create();
+
+        let _m2 = mock("GET", "/secrets/text-secret/versions")
+            .match_query(Matcher::AllOf(vec![
+                Matcher::UrlEncoded("api-version".into(), API_VERSION.into()),
+                Matcher::UrlEncoded("maxresults".into(), "1".into()),
+                Matcher::UrlEncoded("$skiptoken".into(), "SKIP_TOKEN_MOCK".into()),
+            ]))
+            .with_header("content-type", "application/json")
+            .with_body(
+                json!({
+                    "value": [{
+                        "id": "https://test-keyvault.vault.azure.net/secrets/test-secret/VERSION_2",
+                        "attributes": {
+                            "enabled": true,
+                            "created": time_created_2.timestamp(),
+                            "updated": time_updated_2.timestamp(),
+                        }
+                    }],
+                    "nextLink": null
+                })
+                .to_string(),
+            )
+            .with_status(200)
+            .create();
+
+        let mut client = mock_client!(&"test-keyvault");
+
+        let secret_versions = client.get_secret_versions(&"test-secret").await.unwrap();
+
+        let secret_1 = &secret_versions[0];
+        assert_eq!("https://test-keyvault.vault.azure.net/secrets/test-secret/VERSION_1", secret_1.id());
+        assert!(diff(time_created_1, *secret_1.time_created()) < Duration::seconds(1));
+        assert!(diff(time_updated_1, *secret_1.time_updated()) < Duration::seconds(1));
+
+        let secret_2 = &secret_versions[1];
+        assert_eq!("https://test-keyvault.vault.azure.net/secrets/test-secret/VERSION_2", secret_2.id());
+        assert!(diff(time_created_2, *secret_2.time_created()) < Duration::seconds(1));
+        assert!(diff(time_updated_2, *secret_2.time_updated()) < Duration::seconds(1));
+    }
+}

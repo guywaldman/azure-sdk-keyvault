@@ -59,6 +59,68 @@ impl<'a> KeyVaultClient<'a> {
         }
     }
 
+    /// Creates a new `KeyVaultClient` with a pre-existing AAD token.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use azure_sdk_keyvault::KeyVaultClient;
+    /// use chrono::{Utc, Duration};
+    /// use oauth2::AccessToken;
+    /// let client = KeyVaultClient::with_aad_token(&"c1a6d79b-082b-4798-b362-a77e96de50db", &"SUPER_SECRET_KEY", &"bc598e67-03d8-44d5-aa46-8289b9a39a14", &"test-keyvault", AccessToken::new(String::new()), Utc::now() + Duration::days(14));
+    /// ```
+    pub fn with_aad_token(
+        aad_client_id: &'a str,
+        aad_client_secret: &'a str,
+        aad_tenant_id: &'a str,
+        keyvault_name: &'a str,
+        aad_token: AccessToken,
+        aad_token_expiration: DateTime<Utc>,
+    ) -> Self {
+        let endpoint = format!("https://{}.{}", keyvault_name, PUBLIC_ENDPOINT_SUFFIX);
+        Self {
+            aad_client_id,
+            aad_client_secret,
+            aad_tenant_id,
+            keyvault_name,
+            endpoint_suffix: PUBLIC_ENDPOINT_SUFFIX.to_owned(),
+            keyvault_endpoint: endpoint,
+            token: Some(aad_token),
+            token_expiration: Some(aad_token_expiration),
+        }
+    }
+
+    /// Creates a new `KeyVaultClient` with a pre-existing AAD token.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use azure_sdk_keyvault::KeyVaultClient;
+    /// use chrono::{Utc, Duration};
+    /// use oauth2::AccessToken;
+    /// let client = KeyVaultClient::with_aad_token(&"c1a6d79b-082b-4798-b362-a77e96de50db", &"SUPER_SECRET_KEY", &"bc598e67-03d8-44d5-aa46-8289b9a39a14", &"test-keyvault", AccessToken::new(String::new()), Utc::now() + Duration::days(14));
+    /// ```
+    pub fn with_aad_token_and_endpoint_suffix(
+        aad_client_id: &'a str,
+        aad_client_secret: &'a str,
+        aad_tenant_id: &'a str,
+        keyvault_name: &'a str,
+        aad_token: AccessToken,
+        aad_token_expiration: DateTime<Utc>,
+    ) -> Self {
+        let endpoint = format!("https://{}.{}", keyvault_name, PUBLIC_ENDPOINT_SUFFIX);
+        Self {
+            aad_client_id,
+            aad_client_secret,
+            aad_tenant_id,
+            keyvault_name,
+            endpoint_suffix: PUBLIC_ENDPOINT_SUFFIX.to_owned(),
+            keyvault_endpoint: endpoint,
+            token: Some(aad_token),
+            token_expiration: Some(aad_token_expiration),
+        }
+    }
+
     /// Creates a new `KeyVaultClient`.
     ///
     /// # Examples
@@ -73,13 +135,7 @@ impl<'a> KeyVaultClient<'a> {
         aad_tenant_id: &'a str,
         keyvault_name: &'a str,
     ) -> Self {
-        KeyVaultClient::new_with_endpoint_suffix(
-            aad_client_id,
-            aad_client_secret,
-            aad_tenant_id,
-            keyvault_name,
-            PUBLIC_ENDPOINT_SUFFIX,
-        )
+        KeyVaultClient::with_endpoint_suffix(aad_client_id, aad_client_secret, aad_tenant_id, keyvault_name, PUBLIC_ENDPOINT_SUFFIX.to_owned())
     }
 
     pub(crate) async fn refresh_token(&mut self) -> Result<(), KeyVaultError> {

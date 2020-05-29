@@ -26,3 +26,6 @@ serde = { version = "1.0", features = ["derive"] }
 getset = "0.1"
 oauth2 = { version = "3.0.0-alpha.9", features = ["reqwest-010", "futures-03"], default-features = false}
 azure_sdk_auth_aad = "0.42.3"
+
+[dev-dependencies]
+mockito = "0.25.1"
