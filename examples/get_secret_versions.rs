@@ -11,7 +11,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut client = KeyVaultClient::new(&client_id, &client_secret, &tenant_id, &keyvault_name);
 
-    let secrets = client.get_secret_versions(&secret_name, 25).await?;
+    let secrets = client.get_secret_versions(&secret_name).await?;
     dbg!(&secrets);
 
     Ok(())

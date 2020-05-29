@@ -180,28 +180,49 @@ impl<'a> KeyVaultClient<'a> {
     pub async fn get_secret_versions(
         &mut self,
         secret_name: &'a str,
-        max_secrets: usize,
     ) -> Result<Vec<KeyVaultSecretBaseIdentifier>, KeyVaultError> {
-        let uri = Url::parse_with_params(
-            &format!(
-                "https://{}.vault.azure.net/secrets/{}/versions",
-                self.keyvault_name, secret_name
-            ),
-            &[("api-version", API_VERSION), ("maxresults", &max_secrets.to_string())],
+        let mut secret_versions = Vec::<KeyVaultSecretBaseIdentifier>::new();
+        let mut uri = Url::parse_with_params(
+            &format!("{}/secrets/{}/versions", self.keyvault_endpoint, secret_name),
+            &[
+                ("api-version", API_VERSION),
+                ("maxresults", &DEFAULT_GET_VERISONS_MAX_RESULTS.to_string()),
+            ],
         )
         .unwrap();
 
-        let resp_body = self.get_authed(uri.to_string()).await?;
-        let response = serde_json::from_str::<KeyVaultGetSecretsResponse>(&resp_body).unwrap();
+        loop {
+            let resp_body = self.get_authed(uri.to_string()).await?;
+            let response = serde_json::from_str::<KeyVaultGetSecretsResponse>(&resp_body).unwrap();
 
-        Ok(response
-            .value
-            .into_iter()
-            .map(|s| KeyVaultSecretBaseIdentifier {
-                id: s.id.to_owned(),
-                name: s.id.to_owned().split("/").last().unwrap().to_owned(),
-            })
-            .collect())
+            secret_versions.extend(
+                response
+                    .value
+                    .into_iter()
+                    .map(|s| KeyVaultSecretBaseIdentifier {
+                        id: s.id.to_owned(),
+                        name: s.id.to_owned().split("/").last().unwrap().to_owned(),
+                        enabled: s.attributes.enabled,
+                        time_created: s.attributes.created,
+                        time_updated: s.attributes.updated,
+                    })
+                    .collect::<Vec<KeyVaultSecretBaseIdentifier>>(),
+            );
+            match response.next_link {
+                None => break,
+                Some(u) => uri = Url::parse(&u).unwrap(),
+            }
+        }
+
+        // Return the secret versions sorted by the time modified in descending order.
+        secret_versions.sort_by(|a, b| {
+            if a.time_updated > b.time_updated {
+                std::cmp::Ordering::Less
+            } else {
+                std::cmp::Ordering::Greater
+            }
+        });
+        Ok(secret_versions)
     }
 
     /// Sets a secret in the Key Vault.
