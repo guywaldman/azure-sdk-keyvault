@@ -24,10 +24,10 @@ pub enum RecoveryLevel {
 impl fmt::Display for RecoveryLevel {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Purgeable => write!(f, "Purgeable"),
-            Recoverable => write!(f, "Recoverable"),
-            RecoverableAndProtectedSubscription => write!(f, "Recoverable+ProtectedSubscription"),
-            RecoverableAndPurgeable => write!(f, "Recoverable+Purgeable"),
+            RecoveryLevel::Purgeable => write!(f, "Purgeable"),
+            RecoveryLevel::Recoverable => write!(f, "Recoverable"),
+            RecoveryLevel::RecoverableAndProtectedSubscription => write!(f, "Recoverable+ProtectedSubscription"),
+            RecoveryLevel::RecoverableAndPurgeable => write!(f, "Recoverable+Purgeable"),
         }
     }
 }
