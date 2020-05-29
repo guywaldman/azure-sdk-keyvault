@@ -24,7 +24,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .await?;
     // Change secret to expire in two weeks.
     client
-        .update_secret_expiration_time(&secret_name, &secret_version, Utc::now() + (Duration::days(14)))
+        .update_secret_expiration_time(&secret_name, &secret_version, Utc::now() + Duration::days(14))
         .await?;
 
     Ok(())

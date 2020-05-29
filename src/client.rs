@@ -6,7 +6,8 @@ use chrono::{DateTime, Utc};
 use oauth2::{AccessToken, ClientId, ClientSecret};
 use std::sync::Arc;
 
-const PUBLIC_ENDPOINT_SUFFIX: &str = "vault.azure.net";
+pub(crate) const PUBLIC_ENDPOINT_SUFFIX: &str = "vault.azure.net";
+pub(crate) const API_VERSION: &str = "7.0";
 
 /// Client for Key Vault operations - getting a secret, listing secrets, etc.
 ///
@@ -22,7 +23,8 @@ pub struct KeyVaultClient<'a> {
     pub(crate) aad_client_secret: &'a str,
     pub(crate) aad_tenant_id: &'a str,
     pub(crate) keyvault_name: &'a str,
-    pub(crate) endpoint_suffix: &'a str,
+    pub(crate) endpoint_suffix: String,
+    pub(crate) keyvault_endpoint: String,
     pub(crate) token: Option<AccessToken>,
     pub(crate) token_expiration: Option<DateTime<Utc>>,
 }
@@ -35,21 +37,23 @@ impl<'a> KeyVaultClient<'a> {
     ///
     /// ```
     /// use azure_sdk_keyvault::KeyVaultClient;
-    /// let client = KeyVaultClient::new_with_endpoint_suffix(&"c1a6d79b-082b-4798-b362-a77e96de50db", &"SUPER_SECRET_KEY", &"bc598e67-03d8-44d5-aa46-8289b9a39a14", &"test-keyvault", &"vault.foobar.net");
+    /// let client = KeyVaultClient::with_endpoint_suffix(&"c1a6d79b-082b-4798-b362-a77e96de50db", &"SUPER_SECRET_KEY", &"bc598e67-03d8-44d5-aa46-8289b9a39a14", &"test-keyvault", "vault.azure.net".to_owned());
     /// ```
-    pub fn new_with_endpoint_suffix(
+    pub fn with_endpoint_suffix(
         aad_client_id: &'a str,
         aad_client_secret: &'a str,
         aad_tenant_id: &'a str,
         keyvault_name: &'a str,
-        endpoint_suffix: &'a str,
+        endpoint_suffix: String,
     ) -> Self {
+        let endpoint = format!("https://{}.{}", keyvault_name, endpoint_suffix);
         Self {
             aad_client_id,
             aad_client_secret,
             aad_tenant_id,
             keyvault_name,
-            endpoint_suffix: endpoint_suffix,
+            endpoint_suffix,
+            keyvault_endpoint: endpoint,
             token: None,
             token_expiration: None,
         }
@@ -89,7 +93,7 @@ impl<'a> KeyVaultClient<'a> {
             Arc::new(reqwest::Client::new()),
             &aad_client_id,
             &aad_client_secret,
-            "https://vault.azure.net",
+            &format!("https://{}", self.endpoint_suffix),
             self.aad_tenant_id,
         )
         .await

@@ -1,6 +1,6 @@
 use crate::KeyVaultClient;
-use crate::KeyVaultError;
-use anyhow::Result;
+use crate::{client::API_VERSION, KeyVaultError};
+use anyhow::{Context, Result};
 use chrono::serde::ts_seconds;
 use chrono::{DateTime, Utc};
 use getset::Getters;
@@ -9,7 +9,7 @@ use serde::Deserialize;
 use serde_json::{Map, Value};
 use std::fmt;
 
-const API_VERSION: &str = "7.0";
+const DEFAULT_GET_VERISONS_MAX_RESULTS: usize = 25;
 
 /// Reflects the deletion recovery level currently in effect for keys in the current Key Vault.
 /// If it contains 'Purgeable' the key can be permanently deleted by a privileged user;
@@ -32,20 +32,36 @@ impl fmt::Display for RecoveryLevel {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Getters)]
+#[getset(get = "pub")]
 pub struct KeyVaultSecretBaseIdentifier {
     id: String,
     name: String,
+    enabled: bool,
+    time_created: DateTime<Utc>,
+    time_updated: DateTime<Utc>,
+}
+
+#[derive(Deserialize, Debug)]
+pub(crate) struct KeyVaultSecretBaseIdentifierAttributedRaw {
+    enabled: bool,
+    #[serde(with = "ts_seconds")]
+    created: DateTime<Utc>,
+    #[serde(with = "ts_seconds")]
+    updated: DateTime<Utc>,
 }
 
 #[derive(Deserialize, Debug)]
 pub(crate) struct KeyVaultSecretBaseIdentifierRaw {
     id: String,
+    attributes: KeyVaultSecretBaseIdentifierAttributedRaw,
 }
 
 #[derive(Deserialize, Debug)]
 pub(crate) struct KeyVaultGetSecretsResponse {
     value: Vec<KeyVaultSecretBaseIdentifierRaw>,
+    #[serde(rename = "nextLink")]
+    next_link: Option<String>,
 }
 
 #[derive(Debug, Getters)]
@@ -108,14 +124,15 @@ impl<'a> KeyVaultClient<'a> {
     ) -> Result<KeyVaultSecret, KeyVaultError> {
         let uri = Url::parse_with_params(
             &format!(
-                "https://{}.vault.azure.net/secrets/{}/{}",
-                self.keyvault_name, secret_name, secret_version_name
+                "{}/secrets/{}/{}",
+                self.keyvault_endpoint, secret_name, secret_version_name
             ),
             &[("api-version", API_VERSION)],
         )
         .unwrap();
         let resp_body = self.get_authed(uri.to_string()).await?;
-        let response = serde_json::from_str::<KeyVaultGetSecretResponse>(&resp_body).unwrap();
+        let response = serde_json::from_str::<KeyVaultGetSecretResponse>(&resp_body)
+            .with_context(|| format!("Failed to parse response from Key Vault: {}", resp_body))?;
         Ok(KeyVaultSecret {
             enabled: response.attributes.enabled,
             value: response.value,
@@ -139,7 +156,7 @@ impl<'a> KeyVaultClient<'a> {
         max_secrets: usize,
     ) -> Result<Vec<KeyVaultSecretBaseIdentifier>, KeyVaultError> {
         let uri = Url::parse_with_params(
-            &format!("https://{}.vault.azure.net/secrets", self.keyvault_name),
+            &format!("{}/secrets", self.keyvault_endpoint),
             &[("api-version", API_VERSION), ("maxresults", &max_secrets.to_string())],
         )
         .unwrap();
@@ -153,6 +170,9 @@ impl<'a> KeyVaultClient<'a> {
             .map(|s| KeyVaultSecretBaseIdentifier {
                 id: s.id.to_owned(),
                 name: s.id.to_owned().split("/").last().unwrap().to_owned(),
+                enabled: s.attributes.enabled,
+                time_created: s.attributes.created,
+                time_updated: s.attributes.updated,
             })
             .collect())
     }
@@ -195,7 +215,7 @@ impl<'a> KeyVaultClient<'a> {
     /// ```
     pub async fn set_secret(&mut self, secret_name: &'a str, new_secret_value: &'a str) -> Result<(), KeyVaultError> {
         let uri = Url::parse_with_params(
-            &format!("https://{}.vault.azure.net/secrets/{}", self.keyvault_name, secret_name),
+            &format!("{}/secrets/{}", self.keyvault_endpoint, secret_name),
             &[("api-version", API_VERSION)],
         )
         .unwrap();
@@ -288,10 +308,7 @@ impl<'a> KeyVaultClient<'a> {
         attributes: Map<String, Value>,
     ) -> Result<(), KeyVaultError> {
         let uri = Url::parse_with_params(
-            &format!(
-                "https://{}.vault.azure.net/secrets/{}/{}",
-                self.keyvault_name, secret_name, secret_version
-            ),
+            &format!("{}/secrets/{}/{}", self.keyvault_endpoint, secret_name, secret_version),
             &[("api-version", API_VERSION)],
         )
         .unwrap();
