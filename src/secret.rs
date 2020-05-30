@@ -179,7 +179,7 @@ impl<'a> KeyVaultClient<'a> {
 
     /// Lists all the secrets in the Key Vault.
     ///
-    /// ```
+    /// ```no_run
     /// use azure_sdk_keyvault::KeyVaultClient;
     /// use tokio::runtime::Runtime;
     ///
