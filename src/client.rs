@@ -135,7 +135,13 @@ impl<'a> KeyVaultClient<'a> {
         aad_tenant_id: &'a str,
         keyvault_name: &'a str,
     ) -> Self {
-        KeyVaultClient::with_endpoint_suffix(aad_client_id, aad_client_secret, aad_tenant_id, keyvault_name, PUBLIC_ENDPOINT_SUFFIX.to_owned())
+        KeyVaultClient::with_endpoint_suffix(
+            aad_client_id,
+            aad_client_secret,
+            aad_tenant_id,
+            keyvault_name,
+            PUBLIC_ENDPOINT_SUFFIX.to_owned(),
+        )
     }
 
     pub(crate) async fn refresh_token(&mut self) -> Result<(), KeyVaultError> {
@@ -194,20 +200,22 @@ impl<'a> KeyVaultClient<'a> {
         Ok(body)
     }
 
-    pub(crate) async fn post_authed(&mut self, uri: String, body: String) -> Result<String, KeyVaultError> {
+    pub(crate) async fn post_authed(&mut self, uri: String, json_body: Option<String>) -> Result<String, KeyVaultError> {
         self.refresh_token().await?;
 
-        let resp = reqwest::Client::new()
-            .post(&uri)
-            .header(
-                "Authorization",
-                format!("Bearer {}", self.token.as_ref().unwrap().secret()),
-            )
-            .header("Content-Type", "application/json")
-            .body(body)
-            .send()
-            .await
-            .unwrap();
+        let mut req = reqwest::Client::new().post(&uri).header(
+            "Authorization",
+            format!("Bearer {}", self.token.as_ref().unwrap().secret()),
+        );
+
+        if let Some(body) = json_body {
+            req = req.header("Content-Type", "application/json").body(body);
+        } else {
+            req = req.header("Content-Length", 0);
+        }
+
+        let resp = req.send().await.unwrap();
+
         let body = resp.text().await.unwrap();
         Ok(body)
     }

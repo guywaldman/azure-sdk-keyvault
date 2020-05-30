@@ -32,16 +32,6 @@ impl fmt::Display for RecoveryLevel {
     }
 }
 
-#[derive(Debug, Getters)]
-#[getset(get = "pub")]
-pub struct KeyVaultSecretBaseIdentifier {
-    id: String,
-    name: String,
-    enabled: bool,
-    time_created: DateTime<Utc>,
-    time_updated: DateTime<Utc>,
-}
-
 #[derive(Deserialize, Debug)]
 pub(crate) struct KeyVaultSecretBaseIdentifierAttributedRaw {
     enabled: bool,
@@ -64,16 +54,6 @@ pub(crate) struct KeyVaultGetSecretsResponse {
     next_link: Option<String>,
 }
 
-#[derive(Debug, Getters)]
-#[getset(get = "pub")]
-pub struct KeyVaultSecret {
-    id: String,
-    value: String,
-    enabled: bool,
-    time_created: DateTime<Utc>,
-    time_updated: DateTime<Utc>,
-}
-
 #[derive(Deserialize, Debug)]
 pub(crate) struct KeyVaultGetSecretResponse {
     value: String,
@@ -90,6 +70,37 @@ pub(crate) struct KeyVaultGetSecretResponseAttributes {
     updated: DateTime<Utc>,
     #[serde(rename = "recoveryLevel")]
     recovery_level: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub(crate) struct KeyVaultSecretBackupResponseRaw {
+    value: String,
+}
+
+#[derive(Debug, Getters)]
+#[getset(get = "pub")]
+pub struct KeyVaultSecretBackupBlob {
+    value: String,
+}
+
+#[derive(Debug, Getters)]
+#[getset(get = "pub")]
+pub struct KeyVaultSecretBaseIdentifier {
+    id: String,
+    name: String,
+    enabled: bool,
+    time_created: DateTime<Utc>,
+    time_updated: DateTime<Utc>,
+}
+
+#[derive(Debug, Getters)]
+#[getset(get = "pub")]
+pub struct KeyVaultSecret {
+    id: String,
+    value: String,
+    enabled: bool,
+    time_created: DateTime<Utc>,
+    time_updated: DateTime<Utc>,
 }
 
 impl<'a> KeyVaultClient<'a> {
@@ -492,10 +503,52 @@ impl<'a> KeyVaultClient<'a> {
         let mut request_body = Map::new();
         request_body.insert("value".to_owned(), Value::String(backup_blob.to_owned()));
 
-        self.post_authed(uri.to_string(), Value::Object(request_body).to_string())
+        self.post_authed(uri.to_string(), Some(Value::Object(request_body).to_string()))
             .await?;
 
         Ok(())
+    }
+
+    /// Restores a backed up secret and all its versions.
+    /// This operation requires the secrets/restore permission.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use azure_sdk_keyvault::KeyVaultClient;
+    /// use tokio::runtime::Runtime;
+    ///
+    /// async fn example() {
+    ///     let mut client = KeyVaultClient::new(
+    ///     &"CLIENT_ID",
+    ///     &"CLIENT_SECRET",
+    ///     &"TENANT_ID",
+    ///     &"KEYVAULT_NAME",
+    ///     );
+    ///     client.backup_secret(&"SECRET_NAME").await.unwrap();
+    /// }
+    ///
+    /// Runtime::new().unwrap().block_on(example());
+    /// ```
+    pub async fn backup_secret(&mut self, secret_name: &'a str) -> Result<KeyVaultSecretBackupBlob, KeyVaultError> {
+        let uri = Url::parse_with_params(
+            &format!("{}/secrets/{}/backup", self.keyvault_endpoint, secret_name),
+            &[("api-version", API_VERSION)],
+        )
+        .unwrap();
+
+        let response = self.post_authed(uri.to_string(), None).await?;
+        let backup_blob = serde_json::from_str::<KeyVaultSecretBackupResponseRaw>(&response).with_context(|| {
+            format!(
+                "Failed to parse response from Key Vault when backing up secret {}: {}",
+                secret_name,
+                response.to_string()
+            )
+        })?;
+
+        Ok(KeyVaultSecretBackupBlob {
+            value: backup_blob.value,
+        })
     }
 
     /// Deletes a secret in the Key Vault.
