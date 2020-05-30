@@ -461,6 +461,43 @@ impl<'a> KeyVaultClient<'a> {
         Ok(())
     }
 
+    /// Restores a backed up secret and all its versions.
+    /// This operation requires the secrets/restore permission.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use azure_sdk_keyvault::KeyVaultClient;
+    /// use tokio::runtime::Runtime;
+    ///
+    /// async fn example() {
+    ///     let mut client = KeyVaultClient::new(
+    ///     &"CLIENT_ID",
+    ///     &"CLIENT_SECRET",
+    ///     &"TENANT_ID",
+    ///     &"KEYVAULT_NAME",
+    ///     );
+    ///     client.restore_secret(&"KUF6dXJlS2V5VmF1bHRTZWNyZXRCYWNrdXBWMS5taW").await.unwrap();
+    /// }
+    ///
+    /// Runtime::new().unwrap().block_on(example());
+    /// ```
+    pub async fn restore_secret(&mut self, backup_blob: &'a str) -> Result<(), KeyVaultError> {
+        let uri = Url::parse_with_params(
+            &format!("{}/secrets/restore", self.keyvault_endpoint),
+            &[("api-version", API_VERSION)],
+        )
+        .unwrap();
+
+        let mut request_body = Map::new();
+        request_body.insert("value".to_owned(), Value::String(backup_blob.to_owned()));
+
+        self.post_authed(uri.to_string(), Value::Object(request_body).to_string())
+            .await?;
+
+        Ok(())
+    }
+
     /// Deletes a secret in the Key Vault.
     ///
     /// # Arguments
