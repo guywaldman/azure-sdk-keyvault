@@ -39,6 +39,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
+## Features
+
+### Secrets
+
+- Get secret
+- Get secret versions
+- List secrets
+- Set secret
+- Update secret
+- Delete secret
+- Restore secret
+- Backup secret
+
 ## Contributions
 
 ...are welcome! Currently the repo exposes a very small number of operations.
