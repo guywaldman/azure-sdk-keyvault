@@ -1,7 +1,7 @@
 # azure-sdk-keyvault
 
-![Crates.io](https://img.shields.io/crates/v/azure-sdk-rust)
-![Crates.io](https://img.shields.io/crates/l/azure-sdk-rust)
+![Crates.io](https://img.shields.io/crates/v/azure-sdk-keyvault)
+![Crates.io](https://img.shields.io/crates/l/azure-sdk-keyvault)
 [![Build Status](https://travis-ci.org/guywaldman/azure-sdk-keyvault.svg?branch=master)](https://travis-ci.org/guywaldman/azure-sdk-keyvault)
 
 > 🚧 Work in progress, do not use in production. 🚧
