@@ -9,7 +9,7 @@ use serde::Deserialize;
 use serde_json::{Map, Value};
 use std::fmt;
 
-const DEFAULT_GET_VERISONS_MAX_RESULTS: usize = 25;
+const DEFAULT_MAX_RESULTS: usize = 25;
 
 /// Reflects the deletion recovery level currently in effect for keys in the current Key Vault.
 /// If it contains 'Purgeable' the key can be permanently deleted by a privileged user;
@@ -190,36 +190,48 @@ impl<'a> KeyVaultClient<'a> {
     ///     &"TENANT_ID",
     ///     &"KEYVAULT_NAME",
     ///     );
-    ///     let secrets = client.list_secrets(100).await.unwrap();
+    ///     let secrets = client.list_secrets().await.unwrap();
     ///     dbg!(&secrets);
     /// }
     ///
     /// Runtime::new().unwrap().block_on(example());
     /// ```
-    pub async fn list_secrets(
-        &mut self,
-        max_secrets: usize,
-    ) -> Result<Vec<KeyVaultSecretBaseIdentifier>, KeyVaultError> {
-        let uri = Url::parse_with_params(
+    pub async fn list_secrets(&mut self) -> Result<Vec<KeyVaultSecretBaseIdentifier>, KeyVaultError> {
+        let mut secrets = Vec::<KeyVaultSecretBaseIdentifier>::new();
+        let mut uri = Url::parse_with_params(
             &format!("{}/secrets", self.keyvault_endpoint),
-            &[("api-version", API_VERSION), ("maxresults", &max_secrets.to_string())],
+            &[
+                ("api-version", API_VERSION),
+                ("maxresults", &DEFAULT_MAX_RESULTS.to_string()),
+            ],
         )
         .unwrap();
 
-        let resp_body = self.get_authed(uri.to_string()).await?;
-        let response = serde_json::from_str::<KeyVaultGetSecretsResponse>(&resp_body).unwrap();
+        loop {
+            let resp_body = self.get_authed(uri.to_string()).await?;
+            let response = serde_json::from_str::<KeyVaultGetSecretsResponse>(&resp_body).unwrap();
 
-        Ok(response
-            .value
-            .into_iter()
-            .map(|s| KeyVaultSecretBaseIdentifier {
-                id: s.id.to_owned(),
-                name: s.id.to_owned().split("/").last().unwrap().to_owned(),
-                enabled: s.attributes.enabled,
-                time_created: s.attributes.created,
-                time_updated: s.attributes.updated,
-            })
-            .collect())
+            secrets.extend(
+                response
+                    .value
+                    .into_iter()
+                    .map(|s| KeyVaultSecretBaseIdentifier {
+                        id: s.id.to_owned(),
+                        name: s.id.to_owned().split("/").last().unwrap().to_owned(),
+                        enabled: s.attributes.enabled,
+                        time_created: s.attributes.created,
+                        time_updated: s.attributes.updated,
+                    })
+                    .collect::<Vec<KeyVaultSecretBaseIdentifier>>(),
+            );
+
+            match response.next_link {
+                None => break,
+                Some(u) => uri = Url::parse(&u).unwrap(),
+            }
+        }
+
+        Ok(secrets)
     }
 
     /// Gets all the versions for a secret in the Key Vault.
@@ -252,7 +264,7 @@ impl<'a> KeyVaultClient<'a> {
             &format!("{}/secrets/{}/versions", self.keyvault_endpoint, secret_name),
             &[
                 ("api-version", API_VERSION),
-                ("maxresults", &DEFAULT_GET_VERISONS_MAX_RESULTS.to_string()),
+                ("maxresults", &DEFAULT_MAX_RESULTS.to_string()),
             ],
         )
         .unwrap();
@@ -668,7 +680,7 @@ mod tests {
         let _m1 = mock("GET", "/secrets/test-secret/versions")
             .match_query(Matcher::AllOf(vec![
                 Matcher::UrlEncoded("api-version".into(), API_VERSION.into()),
-                Matcher::UrlEncoded("maxresults".into(), DEFAULT_GET_VERISONS_MAX_RESULTS.to_string()),
+                Matcher::UrlEncoded("maxresults".into(), DEFAULT_MAX_RESULTS.to_string()),
             ]))
             .with_header("content-type", "application/json")
             .with_body(
