@@ -14,15 +14,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut client = KeyVaultClient::new(&client_id, &client_secret, &tenant_id, &keyvault_name);
 
-    // Disabled secret.
+    // Disable secret.
     client
-        .update_secret_enabled(&secret_name, &secret_version, true)
+        .update_secret_enabled(&secret_name, &secret_version, false)
         .await?;
-    // Change secret recovery level.
+
+    // Update secret recovery level to `Purgeable`.
     client
         .update_secret_recovery_level(&secret_name, &secret_version, RecoveryLevel::Purgeable)
         .await?;
-    // Change secret to expire in two weeks.
+
+    // Update secret to expire in two weeks.
     client
         .update_secret_expiration_time(&secret_name, &secret_version, Utc::now() + Duration::days(14))
         .await?;
