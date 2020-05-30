@@ -98,10 +98,22 @@ impl<'a> KeyVaultClient<'a> {
     ///
     /// # Example
     ///
-    /// ```
+    /// ```no_run
     /// use azure_sdk_keyvault::KeyVaultClient;
-    /// let mut client = KeyVaultClient::new(&"c1a6d79b-082b-4798-b362-a77e96de50db", &"SUPER_SECRET_KEY", &"bc598e67-03d8-44d5-aa46-8289b9a39a14", &"test-keyvault");
-    /// client.get_secret(&"secret_name");
+    /// use tokio::runtime::Runtime;
+    ///
+    /// async fn example() {
+    ///     let mut client = KeyVaultClient::new(
+    ///     &"CLIENT_ID",
+    ///     &"CLIENT_SECRET",
+    ///     &"TENANT_ID",
+    ///     &"KEYVAULT_NAME",
+    ///     );
+    ///     let secret = client.get_secret(&"SECRET_NAME").await.unwrap();
+    ///     dbg!(&secret);
+    /// }
+    ///
+    /// Runtime::new().unwrap().block_on(example());
     /// ```
     pub async fn get_secret(&mut self, secret_name: &'a str) -> Result<KeyVaultSecret, KeyVaultError> {
         Ok(self.get_secret_with_version(secret_name, "").await?)
@@ -112,10 +124,22 @@ impl<'a> KeyVaultClient<'a> {
     ///
     /// # Example
     ///
-    /// ```
+    /// ```no_run
     /// use azure_sdk_keyvault::KeyVaultClient;
-    /// let mut client = KeyVaultClient::new(&"c1a6d79b-082b-4798-b362-a77e96de50db", &"SUPER_SECRET_KEY", &"bc598e67-03d8-44d5-aa46-8289b9a39a14", &"test-keyvault");
-    /// client.get_secret_with_version(&"secret_name", &"3c9aa4f2-8a1a-4248-9bc9-78bb1a78f5d1");
+    /// use tokio::runtime::Runtime;
+    ///
+    /// async fn example() {
+    ///     let mut client = KeyVaultClient::new(
+    ///     &"CLIENT_ID",
+    ///     &"CLIENT_SECRET",
+    ///     &"TENANT_ID",
+    ///     &"KEYVAULT_NAME",
+    ///     );
+    ///     let secret = client.get_secret_with_version(&"SECRET_NAME", &"SECRET_VERSION").await.unwrap();
+    ///     dbg!(&secret);
+    /// }
+    ///
+    /// Runtime::new().unwrap().block_on(example());
     /// ```
     pub async fn get_secret_with_version(
         &mut self,
@@ -142,14 +166,24 @@ impl<'a> KeyVaultClient<'a> {
         })
     }
 
-    /// Lists all secrets in the Key Vault.
-    ///
-    /// # Example
+    /// Lists all the secrets in the Key Vault.
     ///
     /// ```
     /// use azure_sdk_keyvault::KeyVaultClient;
-    /// let mut client = KeyVaultClient::new(&"c1a6d79b-082b-4798-b362-a77e96de50db", &"SUPER_SECRET_KEY", &"bc598e67-03d8-44d5-aa46-8289b9a39a14", &"test-keyvault");
-    /// client.list_secrets(100);
+    /// use tokio::runtime::Runtime;
+    ///
+    /// async fn example() {
+    ///     let mut client = KeyVaultClient::new(
+    ///     &"CLIENT_ID",
+    ///     &"CLIENT_SECRET",
+    ///     &"TENANT_ID",
+    ///     &"KEYVAULT_NAME",
+    ///     );
+    ///     let secrets = client.list_secrets(100).await.unwrap();
+    ///     dbg!(&secrets);
+    /// }
+    ///
+    /// Runtime::new().unwrap().block_on(example());
     /// ```
     pub async fn list_secrets(
         &mut self,
@@ -177,6 +211,27 @@ impl<'a> KeyVaultClient<'a> {
             .collect())
     }
 
+    /// Gets all the versions for a secret in the Key Vault.
+    /// 
+    /// # Example
+    ///
+    /// ```no_run
+    /// use azure_sdk_keyvault::KeyVaultClient;
+    /// use tokio::runtime::Runtime;
+    ///
+    /// async fn example() {
+    ///     let mut client = KeyVaultClient::new(
+    ///     &"CLIENT_ID",
+    ///     &"CLIENT_SECRET",
+    ///     &"TENANT_ID",
+    ///     &"KEYVAULT_NAME",
+    ///     );
+    ///     let secret_versions = client.get_secret_versions(&"SECRET_NAME").await.unwrap();
+    ///     dbg!(&secret_versions);
+    /// }
+    ///
+    /// Runtime::new().unwrap().block_on(example());
+    /// ```
     pub async fn get_secret_versions(
         &mut self,
         secret_name: &'a str,
@@ -225,14 +280,25 @@ impl<'a> KeyVaultClient<'a> {
         Ok(secret_versions)
     }
 
-    /// Sets a secret in the Key Vault.
+    /// Sets the value of a secret in the Key Vault.
     ///
     /// # Example
     ///
-    /// ```
+    /// ```no_run
     /// use azure_sdk_keyvault::KeyVaultClient;
-    /// let mut client = KeyVaultClient::new(&"c1a6d79b-082b-4798-b362-a77e96de50db", &"SUPER_SECRET_KEY", &"bc598e67-03d8-44d5-aa46-8289b9a39a14", &"test-keyvault");
-    /// client.set_secret(&"some_secret", &"42");
+    /// use tokio::runtime::Runtime;
+    ///
+    /// async fn example() {
+    ///     let mut client = KeyVaultClient::new(
+    ///     &"CLIENT_ID",
+    ///     &"CLIENT_SECRET",
+    ///     &"TENANT_ID",
+    ///     &"KEYVAULT_NAME",
+    ///     );
+    ///     client.set_secret(&"SECRET_NAME", &"NEW_VALUE").await.unwrap();
+    /// }
+    ///
+    /// Runtime::new().unwrap().block_on(example());
     /// ```
     pub async fn set_secret(&mut self, secret_name: &'a str, new_secret_value: &'a str) -> Result<(), KeyVaultError> {
         let uri = Url::parse_with_params(
@@ -250,14 +316,31 @@ impl<'a> KeyVaultClient<'a> {
         Ok(())
     }
 
-    /// Changes whether a secret is enabled or not.
+    /// Updates whether a secret version is enabled or not.
+    /// 
+    /// # Arguments
+    ///
+    /// * `secret_name` - Name of the secret
+    /// * `secret_version` - Version of the secret. Use an empty string for the latest version
+    /// * `enabled` - New `enabled` value of the secret
     ///
     /// # Example
     ///
-    /// ```
+    /// ```no_run
     /// use azure_sdk_keyvault::KeyVaultClient;
-    /// let mut client = KeyVaultClient::new(&"...", &"...", &"...", &"test-keyvault");
-    /// client.update_secret_enabled(&"some_secret", &"...", false);
+    /// use tokio::runtime::Runtime;
+    ///
+    /// async fn example() {
+    ///     let mut client = KeyVaultClient::new(
+    ///     &"CLIENT_ID",
+    ///     &"CLIENT_SECRET",
+    ///     &"TENANT_ID",
+    ///     &"KEYVAULT_NAME",
+    ///     );
+    ///     client.update_secret_enabled(&"SECRET_NAME", &"", true).await.unwrap();
+    /// }
+    ///
+    /// Runtime::new().unwrap().block_on(example());
     /// ```
     pub async fn update_secret_enabled(
         &mut self,
@@ -273,14 +356,31 @@ impl<'a> KeyVaultClient<'a> {
         Ok(())
     }
 
-    /// Changes a secret's [Recovery Level](RecoveryLevel).
+    /// Updates the [`RecoveryLevel`](RecoveryLevel) of a secret version.
+    /// 
+    /// # Arguments
+    ///
+    /// * `secret_name` - Name of the secret
+    /// * `secret_version` - Version of the secret. Use an empty string for the latest version
+    /// * `recovery_level` - New `RecoveryLevel`(RecoveryLevel) value of the secret
     ///
     /// # Example
     ///
-    /// ```
+    /// ```no_run
     /// use azure_sdk_keyvault::{KeyVaultClient, RecoveryLevel};
-    /// let mut client = KeyVaultClient::new(&"...", &"...", &"...", &"test-keyvault");
-    /// client.update_secret_recovery_level(&"some_secret", &"...", RecoveryLevel::Purgeable);
+    /// use tokio::runtime::Runtime;
+    ///
+    /// async fn example() {
+    ///     let mut client = KeyVaultClient::new(
+    ///     &"CLIENT_ID",
+    ///     &"CLIENT_SECRET",
+    ///     &"TENANT_ID",
+    ///     &"KEYVAULT_NAME",
+    ///     );
+    ///     client.update_secret_recovery_level(&"SECRET_NAME", &"", RecoveryLevel::Purgeable).await.unwrap();
+    /// }
+    ///
+    /// Runtime::new().unwrap().block_on(example());
     /// ```
     pub async fn update_secret_recovery_level(
         &mut self,
@@ -296,15 +396,32 @@ impl<'a> KeyVaultClient<'a> {
         Ok(())
     }
 
-    /// Changes a secret's expiration time.
+    /// Updates the expiration time of a secret version.
+    /// 
+    /// # Arguments
+    ///
+    /// * `secret_name` - Name of the secret
+    /// * `secret_version` - Version of the secret. Use an empty string for the latest version
+    /// * `expiration_time - New expiration time of the secret
     ///
     /// # Example
     ///
-    /// ```
+    /// ```no_run
     /// use azure_sdk_keyvault::{KeyVaultClient, RecoveryLevel};
+    /// use tokio::runtime::Runtime;
     /// use chrono::{Utc, Duration};
-    /// let mut client = KeyVaultClient::new(&"...", &"...", &"...", &"test-keyvault");
-    /// client.update_secret_expiration_time(&"some_secret", &"...", Utc::now() + Duration::days(90));
+    ///
+    /// async fn example() {
+    ///     let mut client = KeyVaultClient::new(
+    ///     &"CLIENT_ID",
+    ///     &"CLIENT_SECRET",
+    ///     &"TENANT_ID",
+    ///     &"KEYVAULT_NAME",
+    ///     );
+    ///     client.update_secret_expiration_time(&"SECRET_NAME", &"", Utc::now() + Duration::days(14)).await.unwrap();
+    /// }
+    ///
+    /// Runtime::new().unwrap().block_on(example());
     /// ```
     pub async fn update_secret_expiration_time(
         &mut self,
@@ -474,12 +591,18 @@ mod tests {
         let secret_versions = client.get_secret_versions(&"test-secret").await.unwrap();
 
         let secret_1 = &secret_versions[0];
-        assert_eq!("https://test-keyvault.vault.azure.net/secrets/test-secret/VERSION_1", secret_1.id());
+        assert_eq!(
+            "https://test-keyvault.vault.azure.net/secrets/test-secret/VERSION_1",
+            secret_1.id()
+        );
         assert!(diff(time_created_1, *secret_1.time_created()) < Duration::seconds(1));
         assert!(diff(time_updated_1, *secret_1.time_updated()) < Duration::seconds(1));
 
         let secret_2 = &secret_versions[1];
-        assert_eq!("https://test-keyvault.vault.azure.net/secrets/test-secret/VERSION_2", secret_2.id());
+        assert_eq!(
+            "https://test-keyvault.vault.azure.net/secrets/test-secret/VERSION_2",
+            secret_2.id()
+        );
         assert!(diff(time_created_2, *secret_2.time_created()) < Duration::seconds(1));
         assert!(diff(time_updated_2, *secret_2.time_updated()) < Duration::seconds(1));
     }

@@ -11,9 +11,9 @@ pub(crate) const API_VERSION: &str = "7.0";
 
 /// Client for Key Vault operations - getting a secret, listing secrets, etc.
 ///
-/// # Examples
+/// # Example
 ///
-/// ```
+/// ```no_run
 /// use azure_sdk_keyvault::KeyVaultClient;
 /// let client = KeyVaultClient::new(&"{client_id}", &"{client_secret}", &"{tenant_id}", &"test-keyvault");
 /// ```
@@ -33,9 +33,9 @@ impl<'a> KeyVaultClient<'a> {
     /// Creates a new `KeyVaultClient` with an endpoint suffix. Useful for non-public Azure clouds.
     /// For the default public environment, use `KeyVaultClient::new`.
     ///
-    /// # Examples
+    /// # Example
     ///
-    /// ```
+    /// ```no_run
     /// use azure_sdk_keyvault::KeyVaultClient;
     /// let client = KeyVaultClient::with_endpoint_suffix(&"c1a6d79b-082b-4798-b362-a77e96de50db", &"SUPER_SECRET_KEY", &"bc598e67-03d8-44d5-aa46-8289b9a39a14", &"test-keyvault", "vault.azure.net".to_owned());
     /// ```
@@ -61,9 +61,9 @@ impl<'a> KeyVaultClient<'a> {
 
     /// Creates a new `KeyVaultClient` with a pre-existing AAD token.
     ///
-    /// # Examples
+    /// # Example
     ///
-    /// ```
+    /// ```no_run
     /// use azure_sdk_keyvault::KeyVaultClient;
     /// use chrono::{Utc, Duration};
     /// use oauth2::AccessToken;
@@ -92,9 +92,9 @@ impl<'a> KeyVaultClient<'a> {
 
     /// Creates a new `KeyVaultClient` with a pre-existing AAD token.
     ///
-    /// # Examples
+    /// # Example
     ///
-    /// ```
+    /// ```no_run
     /// use azure_sdk_keyvault::KeyVaultClient;
     /// use chrono::{Utc, Duration};
     /// use oauth2::AccessToken;
@@ -123,9 +123,9 @@ impl<'a> KeyVaultClient<'a> {
 
     /// Creates a new `KeyVaultClient`.
     ///
-    /// # Examples
+    /// # Example
     ///
-    /// ```
+    /// ```no_run
     /// use azure_sdk_keyvault::KeyVaultClient;
     /// let client = KeyVaultClient::new(&"c1a6d79b-082b-4798-b362-a77e96de50db", &"SUPER_SECRET_KEY", &"bc598e67-03d8-44d5-aa46-8289b9a39a14", &"test-keyvault");
     /// ```
