@@ -222,4 +222,21 @@ impl<'a> KeyVaultClient<'a> {
 
         Ok(body)
     }
+
+    pub(crate) async fn delete_authed(&mut self, uri: String) -> Result<String, KeyVaultError> {
+        self.refresh_token().await?;
+
+        let resp = reqwest::Client::new()
+            .delete(&uri)
+            .header(
+                "Authorization",
+                format!("Bearer {}", self.token.as_ref().unwrap().secret()),
+            )
+            .header("Content-Type", "application/json")
+            .send()
+            .await
+            .unwrap();
+        let body = resp.text().await.unwrap();
+        Ok(body)
+    }
 }

@@ -212,7 +212,7 @@ impl<'a> KeyVaultClient<'a> {
     }
 
     /// Gets all the versions for a secret in the Key Vault.
-    /// 
+    //
     /// # Example
     ///
     /// ```no_run
@@ -317,7 +317,7 @@ impl<'a> KeyVaultClient<'a> {
     }
 
     /// Updates whether a secret version is enabled or not.
-    /// 
+    ///
     /// # Arguments
     ///
     /// * `secret_name` - Name of the secret
@@ -357,7 +357,7 @@ impl<'a> KeyVaultClient<'a> {
     }
 
     /// Updates the [`RecoveryLevel`](RecoveryLevel) of a secret version.
-    /// 
+    ///
     /// # Arguments
     ///
     /// * `secret_name` - Name of the secret
@@ -397,7 +397,7 @@ impl<'a> KeyVaultClient<'a> {
     }
 
     /// Updates the expiration time of a secret version.
-    /// 
+    ///
     /// # Arguments
     ///
     /// * `secret_name` - Name of the secret
@@ -457,6 +457,42 @@ impl<'a> KeyVaultClient<'a> {
 
         self.patch_authed(uri.to_string(), Value::Object(request_body).to_string())
             .await?;
+
+        Ok(())
+    }
+
+    /// Deletes a secret in the Key Vault.
+    ///
+    /// # Arguments
+    ///
+    /// * `secret_name` - Name of the secret
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use azure_sdk_keyvault::{KeyVaultClient, RecoveryLevel};
+    /// use tokio::runtime::Runtime;
+    ///
+    /// async fn example() {
+    ///     let mut client = KeyVaultClient::new(
+    ///     &"CLIENT_ID",
+    ///     &"CLIENT_SECRET",
+    ///     &"TENANT_ID",
+    ///     &"KEYVAULT_NAME",
+    ///     );
+    ///     client.delete_secret(&"SECRET_NAME").await.unwrap();
+    /// }
+    ///
+    /// Runtime::new().unwrap().block_on(example());
+    /// ```
+    pub async fn delete_secret(&mut self, secret_name: &'a str) -> Result<(), KeyVaultError> {
+        let uri = Url::parse_with_params(
+            &format!("{}/secrets/{}", self.keyvault_endpoint, secret_name),
+            &[("api-version", API_VERSION)],
+        )
+        .unwrap();
+
+        self.delete_authed(uri.to_string()).await?;
 
         Ok(())
     }
