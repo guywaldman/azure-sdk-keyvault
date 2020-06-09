@@ -4,7 +4,7 @@
 [![Crates.io](https://img.shields.io/crates/l/azure-sdk-keyvault)](https://crates.io/crates/azure-sdk-keyvault)
 [![Build Status](https://travis-ci.org/guywaldman/azure-sdk-keyvault.svg?branch=master)](https://travis-ci.org/guywaldman/azure-sdk-keyvault)
 
-> 🚧 Work in progress, do not use in production. 🚧
+> 🚧 Work in progress, API is prone to changes. 🚧
 
 ## About this Crate
 
